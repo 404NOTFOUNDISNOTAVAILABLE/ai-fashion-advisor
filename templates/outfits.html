@@ -1,0 +1,275 @@
+{% extends 'base.html' %}
+
+{% block title %}Outfit Recommendations - AI Fashion Advisor{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Outfit Recommendations</h1>
+    <div>
+        <button id="generate-outfits" class="btn btn-primary">
+            <i class="bi bi-magic"></i> Generate Outfits
+        </button>
+    </div>
+</div>
+
+{% for category, message in get_flashed_messages(with_categories=true) %}
+<div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+
+<div class="mb-4">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Outfit Filters</h5>
+        </div>
+        <div class="card-body">
+            <form id="outfit-filters" class="row g-3">
+                <div class="col-md-4">
+                    <label for="season" class="form-label">Season</label>
+                    <select class="form-select" id="season" name="season">
+                        <option value="Any">Any Season</option>
+                        <option value="Spring">Spring</option>
+                        <option value="Summer">Summer</option>
+                        <option value="Fall">Fall</option>
+                        <option value="Winter">Winter</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="style" class="form-label">Style</label>
+                    <select class="form-select" id="style" name="style">
+                        <option value="Any">Any Style</option>
+                        <option value="Casual">Casual</option>
+                        <option value="Formal">Formal</option>
+                        <option value="Business">Business</option>
+                        <option value="Athletic">Athletic</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="color-scheme" class="form-label">Color Scheme</label>
+                    <select class="form-select" id="color-scheme" name="color_scheme">
+                        <option value="Any">Any Colors</option>
+                        <option value="Monochrome">Monochrome</option>
+                        <option value="Complementary">Complementary</option>
+                        <option value="Analogous">Analogous</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="outfits-container" data-item-count="{{ item_count|default(0) }}">
+    {% if item_count < 2 %}
+        <div class="text-center py-5 border rounded">
+            <i class="bi bi-palette display-4 text-muted mb-3"></i>
+            <h2 class="mb-3">Not enough items in your wardrobe</h2>
+            <p class="text-muted mb-4">You need at least one top and one bottom to generate outfits.</p>
+            <a href="{{ url_for('upload') }}" class="btn btn-primary">
+                <i class="bi bi-camera"></i> Add More Items
+            </a>
+        </div>
+    {% else %}
+        <div id="loading-outfits" class="text-center py-5 d-none">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h3>Generating outfit recommendations...</h3>
+            <p class="text-muted">Our AI is analyzing your wardrobe to create stylish combinations.</p>
+        </div>
+        
+        <div id="outfit-results" class="row row-cols-1 row-cols-md-3 g-4">
+            <!-- Outfit cards will be generated here -->
+        </div>
+        
+        <div id="no-outfits" class="text-center py-5 border rounded d-none">
+            <i class="bi bi-exclamation-circle display-4 text-muted mb-3"></i>
+            <h2 class="mb-3">No outfits found</h2>
+            <p class="text-muted mb-4">Try changing your filters or add more variety to your wardrobe.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Outfit Save Modal -->
+<div class="modal fade" id="saveOutfitModal" tabindex="-1" aria-labelledby="saveOutfitModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="saveOutfitModalLabel">Save Outfit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="save-outfit-form">
+                    <input type="hidden" id="outfit-data" name="outfit_data">
+                    <div class="mb-3">
+                        <label for="outfit-name" class="form-label">Outfit Name</label>
+                        <input type="text" class="form-control" id="outfit-name" name="name" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-outfit-btn">Save Outfit</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const generateBtn = document.getElementById('generate-outfits');
+        const outfitsContainer = document.getElementById('outfits-container');
+        const loadingOutfits = document.getElementById('loading-outfits');
+        const outfitResults = document.getElementById('outfit-results');
+        const noOutfits = document.getElementById('no-outfits');
+        const filtersForm = document.getElementById('outfit-filters');
+        const saveOutfitModal = new bootstrap.Modal(document.getElementById('saveOutfitModal'));
+        const saveOutfitBtn = document.getElementById('save-outfit-btn');
+        const outfitDataInput = document.getElementById('outfit-data');
+        
+        // Get item count from data attribute
+        const itemCount = parseInt(outfitsContainer.dataset.itemCount || '0');
+        
+        // Generate outfits when button is clicked
+        generateBtn.addEventListener('click', function() {
+            generateOutfits();
+        });
+        
+        // Generate outfits when filters change
+        filtersForm.addEventListener('change', function() {
+            generateOutfits();
+        });
+        
+        // Save outfit when save button is clicked
+        saveOutfitBtn.addEventListener('click', function() {
+            const outfitName = document.getElementById('outfit-name').value;
+            if (!outfitName) {
+                alert('Please enter a name for this outfit');
+                return;
+            }
+            
+            const outfitData = JSON.parse(outfitDataInput.value);
+            outfitData.name = outfitName;
+            
+            fetch('/save-outfit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(outfitData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    saveOutfitModal.hide();
+                    alert('Outfit saved successfully!');
+                } else {
+                    alert('Error saving outfit: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while saving the outfit');
+            });
+        });
+        
+        function generateOutfits() {
+            // Show loading indicator
+            loadingOutfits.classList.remove('d-none');
+            outfitResults.classList.add('d-none');
+            noOutfits.classList.add('d-none');
+            
+            // Get filter values
+            const formData = new FormData(filtersForm);
+            const filters = Object.fromEntries(formData.entries());
+            
+            // Make API request
+            fetch('/generate-outfits?' + new URLSearchParams(filters))
+                .then(response => response.json())
+                .then(data => {
+                    // Hide loading indicator
+                    loadingOutfits.classList.add('d-none');
+                    
+                    if (data.error) {
+                        // Show error message
+                        noOutfits.querySelector('p').textContent = data.error;
+                        noOutfits.classList.remove('d-none');
+                    } else if (data.outfits && data.outfits.length > 0) {
+                        // Render outfits
+                        renderOutfits(data.outfits);
+                        outfitResults.classList.remove('d-none');
+                    } else {
+                        // No outfits found
+                        noOutfits.classList.remove('d-none');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    loadingOutfits.classList.add('d-none');
+                    noOutfits.querySelector('p').textContent = 'An error occurred while generating outfits.';
+                    noOutfits.classList.remove('d-none');
+                });
+        }
+        
+        function renderOutfits(outfits) {
+            outfitResults.innerHTML = '';
+            
+            outfits.forEach(function(outfit, index) {
+                const outfitCard = document.createElement('div');
+                outfitCard.className = 'col';
+                
+                let outfitItems = '';
+                for (const category in outfit) {
+                    if (category !== 'id' && outfit[category]) {
+                        const item = outfit[category];
+                        outfitItems += '<div class="outfit-item mb-2">' +
+                            '<div class="d-flex align-items-center">' +
+                            '<div class="outfit-item-image me-2">' +
+                            '<img src="' + (item.image_path ? '/static/' + item.image_path : '/static/img/placeholder.png') + '"' +
+                            ' alt="' + item.name + '" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">' +
+                            '</div>' +
+                            '<div>' +
+                            '<h6 class="mb-0">' + item.name + '</h6>' +
+                            '<small class="text-muted">' + category + '</small>' +
+                            '</div>' +
+                            '</div>' +
+                            '</div>';
+                    }
+                }
+                
+                outfitCard.innerHTML = '<div class="card h-100">' +
+                    '<div class="card-header d-flex justify-content-between align-items-center">' +
+                    '<h5 class="card-title mb-0">Outfit ' + (index + 1) + '</h5>' +
+                    '<button class="btn btn-sm btn-outline-primary save-outfit-btn" data-outfit-index="' + index + '">' +
+                    '<i class="bi bi-bookmark-plus"></i> Save' +
+                    '</button>' +
+                    '</div>' +
+                    '<div class="card-body">' +
+                    outfitItems +
+                    '</div>' +
+                    '</div>';
+                
+                outfitResults.appendChild(outfitCard);
+            });
+            
+            // Add event listeners to save buttons
+            document.querySelectorAll('.save-outfit-btn').forEach(function(button) {
+                button.addEventListener('click', function() {
+                    const outfitIndex = this.getAttribute('data-outfit-index');
+                    const outfit = outfits[outfitIndex];
+                    outfitDataInput.value = JSON.stringify(outfit);
+                    saveOutfitModal.show();
+                });
+            });
+        }
+        
+        // Generate outfits on page load if we have enough items
+        if (itemCount >= 2) {
+            generateOutfits();
+        }
+    });
+</script>
+{% endblock %}

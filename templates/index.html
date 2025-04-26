@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Fashion Advisor - Your Personal Stylist{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center text-center my-5">
+    <div class="col-md-8">
+        <h1 class="display-4 fw-bold mb-4">Your Personal AI Fashion Stylist</h1>
+        <p class="lead mb-4">
+            Upload your clothing items and get personalized outfit recommendations based on your wardrobe.
+            Our AI analyzes your garments and creates stylish combinations tailored to you.
+        </p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{{ url_for('upload') }}" class="btn btn-primary btn-lg">
+                <i class="bi bi-camera"></i> Add Clothing Item
+            </a>
+            <a href="{{ url_for('outfits') }}" class="btn btn-outline-primary btn-lg">
+                <i class="bi bi-stars"></i> Get Outfit Ideas
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5 g-4">
+    <div class="col-md-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="bi bi-camera display-4 text-primary mb-3"></i>
+                <h3 class="card-title">Upload Your Clothes</h3>
+                <p class="card-text">Take photos or upload images of your clothing items to build your digital wardrobe.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="bi bi-stars display-4 text-primary mb-3"></i>
+                <h3 class="card-title">AI Recognition</h3>
+                <p class="card-text">Our AI identifies garment types, colors, and styles using advanced computer vision.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="bi bi-palette display-4 text-primary mb-3"></i>
+                <h3 class="card-title">Get Outfit Ideas</h3>
+                <p class="card-text">Receive personalized outfit recommendations based on fashion principles and your style.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="text-center mt-5">
+    <p class="text-muted">
+        Powered by deep learning and computer vision technology
+    </p>
+</div>
+{% endblock %}

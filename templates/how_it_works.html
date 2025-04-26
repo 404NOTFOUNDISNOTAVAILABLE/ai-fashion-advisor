@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}How It Works - AI Fashion Advisor{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Home
+    </a>
+</div>
+
+<h1 class="mb-5">How It Works</h1>
+
+<div class="row mb-5">
+    <div class="col-md-3 text-center">
+        <div class="bg-light rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
+            <i class="bi bi-camera display-4 text-primary"></i>
+        </div>
+    </div>
+    <div class="col-md-9">
+        <h2 class="mb-3">1. Upload Your Clothes</h2>
+        <p class="text-muted">
+            Take photos of your clothing items or upload existing images. Our system stores these images locally on
+            your device, ensuring your fashion data remains private and secure.
+        </p>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <div class="col-md-3 text-center">
+        <div class="bg-light rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
+            <i class="bi bi-cpu display-4 text-primary"></i>
+        </div>
+    </div>
+    <div class="col-md-9">
+        <h2 class="mb-3">2. AI Recognition</h2>
+        <p class="text-muted">
+            Our AI system analyzes each garment to identify its category, color, and style attributes. The system uses
+            computer vision techniques to understand the characteristics of your clothing items.
+        </p>
+        <p class="text-muted">
+            For this demo version, we simulate AI recognition with randomized predictions. In the full version, we
+            would use a trained convolutional neural network (CNN) model to accurately identify garment details.
+        </p>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <div class="col-md-3 text-center">
+        <div class="bg-light rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
+            <i class="bi bi-stars display-4 text-primary"></i>
+        </div>
+    </div>
+    <div class="col-md-9">
+        <h2 class="mb-3">3. Outfit Generation</h2>
+        <p class="text-muted">
+            Our outfit matching engine uses fashion rules and compatibility logic to create stylish combinations from
+            your wardrobe. It considers factors like color harmony, style compatibility, and seasonal appropriateness.
+        </p>
+        <p class="text-muted">
+            In this demo, we use a simplified algorithm that pairs tops with bottoms and adds accessories. The full
+            version would incorporate more sophisticated matching rules based on fashion principles and your personal
+            preferences.
+        </p>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <div class="col-md-3 text-center">
+        <div class="bg-light rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
+            <i class="bi bi-palette display-4 text-primary"></i>
+        </div>
+    </div>
+    <div class="col-md-9">
+        <h2 class="mb-3">4. Personalized Recommendations</h2>
+        <p class="text-muted">
+            As you interact with the system by liking or disliking outfits, our AI learns your preferences and
+            improves its recommendations over time. This creates a personalized styling experience unique to your
+            taste.
+        </p>
+        <p class="text-muted">
+            In the demo, we simulate this feedback loop. The full version would implement a machine learning model
+            that adapts to your preferences and provides increasingly accurate recommendations.
+        </p>
+    </div>
+</div>
+
+<div class="card bg-light mt-5">
+    <div class="card-body">
+        <h2 class="card-title mb-4">Technical Implementation</h2>
+        <p class="mb-3">This project demonstrates the following technical components:</p>
+        <ul class="mb-4">
+            <li>Flask web application framework</li>
+            <li>SQLite database for storing wardrobe items</li>
+            <li>Image handling and processing with PIL/Pillow</li>
+            <li>Simulated AI garment recognition</li>
+            <li>Outfit generation algorithm</li>
+            <li>Responsive UI design with Bootstrap</li>
+        </ul>
+        <p class="mb-3">For a production version, we would implement:</p>
+        <ul>
+            <li>A trained CNN model for accurate garment recognition</li>
+            <li>Cloud storage for images and user data</li>
+            <li>User authentication and profiles</li>
+            <li>Advanced outfit matching algorithms</li>
+            <li>Machine learning for personalized recommendations</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

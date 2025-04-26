@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block title %}Saved Outfits - AI Fashion Advisor{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Saved Outfits</h1>
+    <a href="{{ url_for('outfits') }}" class="btn btn-primary">
+        <i class="bi bi-magic"></i> Generate New Outfits
+    </a>
+</div>
+
+{% for category, message in get_flashed_messages(with_categories=true) %}
+<div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+
+{% if outfits %}
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for outfit in outfits %}
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">{{ outfit.name }}</h5>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <form action="{{ url_for('delete_outfit', outfit_id=outfit.id) }}" method="post" class="delete-form">
+                                    <button type="submit" class="dropdown-item text-danger">Delete</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if outfit.top %}
+                    <div class="outfit-item mb-2">
+                        <div class="d-flex align-items-center">
+                            <div class="outfit-item-image me-2">
+                                <img src="{{ url_for('static', filename=outfit.top.image_path.replace('static/', '')) }}" 
+                                     alt="{{ outfit.top.name }}" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
+                            </div>
+                            <div>
+                                <h6 class="mb-0">{{ outfit.top.name }}</h6>
+                                <small class="text-muted">Top</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if outfit.bottom %}
+                    <div class="outfit-item mb-2">
+                        <div class="d-flex align-items-center">
+                            <div class="outfit-item-image me-2">
+                                <img src="{{ url_for('static', filename=outfit.bottom.image_path.replace('static/', '')) }}" 
+                                     alt="{{ outfit.bottom.name }}" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
+                            </div>
+                            <div>
+                                <h6 class="mb-0">{{ outfit.bottom.name }}</h6>
+                                <small class="text-muted">Bottom</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if outfit.outerwear %}
+                    <div class="outfit-item mb-2">
+                        <div class="d-flex align-items-center">
+                            <div class="outfit-item-image me-2">
+                                <img src="{{ url_for('static', filename=outfit.outerwear.image_path.replace('static/', '')) }}" 
+                                     alt="{{ outfit.outerwear.name }}" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
+                            </div>
+                            <div>
+                                <h6 class="mb-0">{{ outfit.outerwear.name }}</h6>
+                                <small class="text-muted">Outerwear</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if outfit.footwear %}
+                    <div class="outfit-item mb-2">
+                        <div class="d-flex align-items-center">
+                            <div class="outfit-item-image me-2">
+                                <img src="{{ url_for('static', filename=outfit.footwear.image_path.replace('static/', '')) }}" 
+                                     alt="{{ outfit.footwear.name }}" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
+                            </div>
+                            <div>
+                                <h6 class="mb-0">{{ outfit.footwear.name }}</h6>
+                                <small class="text-muted">Footwear</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if outfit.accessory %}
+                    <div class="outfit-item mb-2">
+                        <div class="d-flex align-items-center">
+                            <div class="outfit-item-image me-2">
+                                <img src="{{ url_for('static', filename=outfit.accessory.image_path.replace('static/', '')) }}" 
+                                     alt="{{ outfit.accessory.name }}" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
+                            </div>
+                            <div>
+                                <h6 class="mb-0">{{ outfit.accessory.name }}</h6>
+                                <small class="text-muted">Accessory</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-muted">
+                    <small>Created: {{ outfit.date_created.strftime('%Y-%m-%d') }}</small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-5 border rounded">
+        <i class="bi bi-bookmark display-4 text-muted mb-3"></i>
+        <h2 class="mb-3">No saved outfits</h2>
+        <p class="text-muted mb-4">Generate and save outfits to see them here.</p>
+        <a href="{{ url_for('outfits') }}" class="btn btn-primary">
+            <i class="bi bi-magic"></i> Generate Outfits
+        </a>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Confirm delete
+        document.querySelectorAll('.delete-form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                if (!confirm('Are you sure you want to delete this outfit?')) {
+                    e.preventDefault();
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Clothing Item - AI Fashion Advisor{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('wardrobe') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Wardrobe
+    </a>
+</div>
+
+<h1 class="mb-4">Add Clothing Item</h1>
+
+{% for category, message in get_flashed_messages(with_categories=true) %}
+<div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="text-center">
+                    <div id="image-preview" class="mb-3">
+                        <div class="placeholder-upload">
+                            <i class="bi bi-cloud-upload display-4 text-muted"></i>
+                            <p class="text-muted">Upload an image of your clothing item</p>
+                        </div>
+                        <img id="preview-img" class="img-fluid d-none" alt="Clothing preview">
+                    </div>
+                    <div class="mb-3">
+                        <input type="file" id="image-upload" class="form-control" accept="image/*">
+                    </div>
+                    <p class="text-muted small">Supported formats: JPG, PNG, WEBP, GIF</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <form id="item-form" action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" id="hidden-file" class="d-none">
+            
+            <div class="mb-3">
+                <label for="name" class="form-label">Item Name</label>
+                <input type="text" class="form-control" id="name" name="name" required placeholder="Blue Denim Jacket">
+            </div>
+            
+            <div class="mb-3">
+                <label for="category" class="form-label">Category</label>
+                <select class="form-select" id="category" name="category" required>
+                    <option value="" selected disabled>Select category</option>
+                    <option value="tops">Tops</option>
+                    <option value="bottoms">Bottoms</option>
+                    <option value="dresses">Dresses</option>
+                    <option value="outerwear">Outerwear</option>
+                    <option value="footwear">Footwear</option>
+                    <option value="accessories">Accessories</option>
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <label for="color" class="form-label">Color</label>
+                <input type="text" class="form-control" id="color" name="color" required placeholder="Navy Blue">
+            </div>
+            
+            <div class="mb-3">
+                <label for="season" class="form-label">Season</label>
+                <select class="form-select" id="season" name="season" required>
+                    <option value="" selected disabled>Select season</option>
+                    <option value="spring">Spring</option>
+                    <option value="summer">Summer</option>
+                    <option value="fall">Fall</option>
+                    <option value="winter">Winter</option>
+                    <option value="all">All Seasons</option>
+                </select>
+            </div>
+            
+            <div id="ai-analysis-status" class="alert alert-info d-none mb-3">
+                <div class="d-flex align-items-center">
+                    <div class="spinner-border spinner-border-sm me-2" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span>AI is analyzing your image...</span>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary w-100" id="save-button">Save Item</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const imageUpload = document.getElementById('image-upload');
+        const hiddenFile = document.getElementById('hidden-file');
+        const previewImg = document.getElementById('preview-img');
+        const placeholder = document.querySelector('.placeholder-upload');
+        const form = document.getElementById('item-form');
+        const aiStatus = document.getElementById('ai-analysis-status');
+        
+        // Fields that will be filled by AI analysis
+        const nameField = document.getElementById('name');
+        const categoryField = document.getElementById('category');
+        const colorField = document.getElementById('color');
+        
+        // Create a div for color analysis results
+        const colorAnalysisDiv = document.createElement('div');
+        colorAnalysisDiv.className = 'd-none mt-3';
+        colorAnalysisDiv.id = 'color-analysis';
+        document.querySelector('.card-body').appendChild(colorAnalysisDiv);
+        
+        imageUpload.addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                
+                // Create a copy of the file for the hidden input
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                hiddenFile.files = dataTransfer.files;
+                
+                reader.onload = function(event) {
+                    previewImg.src = event.target.result;
+                    previewImg.classList.remove('d-none');
+                    placeholder.classList.add('d-none');
+                    
+                    // Show AI analysis status
+                    aiStatus.classList.remove('d-none');
+                    
+                    // Create form data for analysis
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    // Send to server for analysis
+                    fetch('/analyze-image', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Fill form fields with AI predictions
+                        if (data.name) nameField.value = data.name;
+                        if (data.category) categoryField.value = data.category;
+                        if (data.color) colorField.value = data.color;
+                        
+                        // Display color analysis if available
+                        if (data.color_analysis && data.color_analysis.length > 0) {
+                            let colorHtml = '<h5 class="mt-3">Color Analysis</h5>';
+                            colorHtml += '<div class="color-palette d-flex mb-2">';
+                            
+                            // Create color swatches
+                            data.color_analysis.forEach(color => {
+                                const [r, g, b] = color.rgb;
+                                const percentage = color.percentage.toFixed(1);
+                                colorHtml += `
+                                    <div class="color-swatch me-2 text-center">
+                                        <div style="background-color: rgb(${r}, ${g}, ${b}); width: 30px; height: 30px; border-radius: 4px;"></div>
+                                        <small>${color.name}</small>
+                                        <small class="d-block text-muted">${percentage}%</small>
+                                    </div>
+                                `;
+                            });
+                            
+                            colorHtml += '</div>';
+                            
+                            // Display color visualization if available
+                            if (data.color_visualization) {
+                                colorHtml += `
+                                    <div class="mt-2">
+                                        <img src="/${data.color_visualization}" class="img-fluid rounded" alt="Color Analysis">
+                                    </div>
+                                `;
+                            }
+                            
+                            colorAnalysisDiv.innerHTML = colorHtml;
+                            colorAnalysisDiv.classList.remove('d-none');
+                        }
+                        
+                        // Hide AI status
+                        aiStatus.classList.add('d-none');
+                        
+                        // Show success message
+                        showToast('Image analyzed successfully!', 'success');
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        aiStatus.classList.add('d-none');
+                        showToast('Failed to analyze image. Please fill in the details manually.', 'error');
+                    });
+                };
+                
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Validate form submission
+        form.addEventListener('submit', function(e) {
+            if (!hiddenFile.files || !hiddenFile.files[0]) {
+                e.preventDefault();
+                showToast('Please upload an image of your clothing item.', 'error');
+            }
+        });
+    });
+    
+    // Toast function (temporary implementation)
+    function showToast(message, type) {
+        const alertClass = type === 'error' ? 'danger' : type;
+        const alertHtml = `
+            <div class="alert alert-${alertClass} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        
+        const alertContainer = document.createElement('div');
+        alertContainer.innerHTML = alertHtml;
+        document.querySelector('.container').prepend(alertContainer.firstChild);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            if (alerts.length > 0) {
+                const bsAlert = new bootstrap.Alert(alerts[0]);
+                bsAlert.close();
+            }
+        }, 5000);
+    }
+</script>
+{% endblock %}
